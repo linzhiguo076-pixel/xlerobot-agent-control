@@ -46,11 +46,24 @@ def validate_request(request: dict) -> dict:
         if not (0.1 <= duration <= 3.0):
             raise ValueError("duration must be between 0.1 and 3.0 seconds")
         speed = parameters.get("speed")
+        is_rotation = str(direction).startswith("rotate")
+        
+        # 1. 动态设置默认速度
         if speed is None:
-            speed = 0.15 if not str(direction).startswith("rotate") else 0.30
+            # 线速度默认 0.15 m/s，角速度默认 30.0 deg/s (LeKiwi接收的是角度制)
+            speed = 30.0 if is_rotation else 0.15
+            
         speed = _require_number(speed, "speed")
-        if not (0.01 <= speed <= 1.0):
-            raise ValueError("speed must be between 0.01 and 1.0")
+        
+        # 2. 分离安全上限校验
+        if is_rotation:
+            max_angular_speed = 60.0  # 建议最大旋转速度 60 deg/s (根据你的底盘实际情况微调)
+            if not (0.01 <= speed <= max_angular_speed):
+                raise ValueError(f"rotation speed must be between 0.01 and {max_angular_speed} deg/s")
+        else:
+            max_linear_speed = 0.3  # 建议最大线速度 0.3 m/s
+            if not (0.01 <= speed <= max_linear_speed):
+                raise ValueError(f"linear speed must be between 0.01 and {max_linear_speed} m/s")
         normalized["parameters"] = {
             "direction": direction,
             "duration": duration,

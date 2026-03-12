@@ -16,13 +16,26 @@ class RobotOrchestrator:
 
     def refresh_state(self):
         self.state.last_observation = self.adapter.get_observation()
+    
+    def _with_state(self, result_dict: dict, error_msg: str = None) -> dict:
+        self.refresh_state()
+        if error_msg:
+            self.state.last_error = error_msg # 建议 10
+        else:
+            self.state.last_error = None
+            
+        return {
+            "action_result": result_dict,
+            "robot_state": self.state.snapshot()
+        }
 
     def move_base(self, direction: str, duration: float, speed: float) -> dict:
         self.state.busy = True
         try:
             result = self.base.move(direction=direction, duration=duration, speed=speed)
-            self.refresh_state()
-            return result
+            return self._with_state(result)
+        except Exception as e:
+            return self._with_state({"executed": "move_base", "status": "failed"}, str(e))
         finally:
             self.state.busy = False
 

@@ -25,24 +25,23 @@ class XLerobotAdapter:
 
     def get_observation(self) -> dict:
         if not self._connected:
-            return {"connected": False, "error": "Robot not connected."}
+            return {"connected": False}
         
         raw_obs = self.robot.get_observation()
         safe_obs = {"connected": self._connected}
+
+        allowed_suffixes = (".pos", ".vel")
+        allowed_keys = ("battery", "timestamp")
         
-        # 剥离/转换图像数据，防止 JSON 序列化崩溃
-        # LLM 决策通常只需要位置和速度等本体感受 (Proprioception)
         for key, value in raw_obs.items():
-            if isinstance(value, (int, float, bool, str)):
-                safe_obs[key] = value
-            elif isinstance(value, np.ndarray) and value.ndim == 1:
-                safe_obs[key] = value.tolist()
-            elif hasattr(value, "item"):  # 处理标量 tensor 或 numpy float
-                try:
-                    safe_obs[key] = value.item()
-                except ValueError:
-                    pass # 忽略高维图像张量
-                    
+            if key.endswith(allowed_suffixes) or key in allowed_keys:
+                if isinstance(value, (int, float, bool, str)):
+                    safe_obs[key] = round(value, 3) # 顺便截断小数位数，节省 Token
+                elif hasattr(value, "item"):
+                    try:
+                        safe_obs[key] = round(value.item(), 3)
+                    except ValueError:
+                        pass
         return safe_obs
 
     def send_base(self, vx: float, vy: float, wz: float):
@@ -58,22 +57,36 @@ class XLerobotAdapter:
         }
         self.robot.send_action(action)
 
-    def reset_arm(self, side: str = "right"):
+    def send_head(self, head_motor_1: float, head_motor_2: float):
         if not self._connected:
             return
-            
-        # 3. 提供真实的 SO101 安全重置姿态 (全部归零或归中)
+        action = {
+            "head_motor_1.pos": head_motor_1,
+            "head_motor_2.pos": head_motor_2,
+        }
+        if hasattr(self, 'robot'):
+            self.robot.send_action(action)
+
+
+    def reset_arm(self):
+        if not self._connected:
+            return
         reset_action = {
             "arm_shoulder_pan.pos": 0.0,
             "arm_shoulder_lift.pos": 0.0,
             "arm_elbow_flex.pos": 0.0,
             "arm_wrist_flex.pos": 0.0,
             "arm_wrist_roll.pos": 0.0,
-            "arm_gripper.pos": 100.0,  # 100通常代表张开
+            "arm_gripper.pos": 100.0,
         }
-        self.robot.send_action(reset_action)
+        if hasattr(self, 'robot'):
+            self.robot.send_action(reset_action)
 
-    def stop_all(self):
-        if self._connected:
+    def stop_base(self):
+        if not self._connected:
+            return
+        # 发送 0 速度
+        self.send_base(0.0, 0.0, 0.0)
+        # 调用原生刹车
+        if hasattr(self, 'robot'):
             self.robot.stop_base()
-            # 可以发送当前位置指令让手臂定住，此处底盘停止最重要

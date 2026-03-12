@@ -5,9 +5,10 @@ class BaseController:
     def __init__(self, adapter, control_hz: int = 10):
         self.adapter = adapter
         self.control_hz = control_hz
+        self.cancel_event = threading.Event()
 
     def move(self, direction: str, duration: float, speed: float) -> dict:
-        # 安全限制：防止 LLM 给出过长的运行时间
+        self.cancel_event.clear()
         duration = min(duration, 10.0) 
         
         vx = vy = wz = 0.0
@@ -30,10 +31,13 @@ class BaseController:
         dt = 1.0 / self.control_hz
         end_time = time.time() + duration
         
+        interrupted = False
         try:
-            while time.time() < end_time:
+            while time.time() < end_time and not self.cancel_event.is_set():
                 self.adapter.send_base(vx=vx, vy=vy, wz=wz)
                 time.sleep(dt)
+            if self.cancel_event.is_set():
+                interrupted = True
         except Exception as e:
             logging.error(f"Move interrupted: {e}")
         finally:
@@ -45,11 +49,10 @@ class BaseController:
             "direction": direction,
             "duration": duration,
             "speed": speed,
+            "interrupted": interrupted
         }
 
     def stop(self) -> dict:
-        self.adapter.send_base(vx=0.0, vy=0.0, wz=0.0)
-        # Lerobot LeKiwi 专有的底盘停止方法
-        if hasattr(self.adapter, 'robot'):
-             self.adapter.robot.stop_base()
+        self.cancel_event.set() 
+        self.adapter.stop_base() 
         return {"executed": "stop_base"}

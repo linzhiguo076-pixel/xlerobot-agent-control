@@ -1,8 +1,11 @@
-#!/usr/bin/env python3
 import json
 import sys
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import threading
+import uuid
+import time
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -21,6 +24,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         length = int(self.headers.get("Content-Length", "0"))
         body = self.rfile.read(length)
+        request_id = str(uuid.uuid4())
+        started_at = time.time()
         try:
             payload = json.loads(body.decode("utf-8"))
             request = validate_request(payload)
@@ -43,8 +48,15 @@ class Handler(BaseHTTPRequestHandler):
                 result = ORCH.stop_all()
             else:
                 raise ValueError(f"unsupported action_type: {action_type}")
-
-            self._send_json(200, {"ok": True, "result": result})
+            finished_at = time.time()
+            self._send_json(200, {
+                "ok": True,
+                "request_id": request_id,
+                "started_at": started_at,
+                "finished_at": finished_at,
+                "duration_sec": round(finished_at - started_at, 3),
+                "data": result # 这里面已经包含了 action_result 和 robot_state
+            })
         except Exception as exc:
             self._send_json(400, {"ok": False, "error": str(exc)})
 
@@ -61,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    server = HTTPServer(("127.0.0.1", 8765), Handler)
+    server = ThreadingHTTPServer(("127.0.0.1", 8765), Handler)
     print("XLerobot robot_server listening on http://127.0.0.1:8765/action")
     
     try:
