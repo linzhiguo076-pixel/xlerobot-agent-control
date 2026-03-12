@@ -74,9 +74,6 @@ def validate_request(request: dict) -> dict:
         normalized["parameters"] = {"head_motor_1": hm1, "head_motor_2": hm2}
 
     elif action_type == "reset_arm":
-        #side = parameters.get("side")
-        #if side not in {"left", "right"}:
-        #    raise ValueError("side must be 'left' or 'right'")
         normalized["parameters"] = {}
 
     else:

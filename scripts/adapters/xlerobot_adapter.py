@@ -96,3 +96,11 @@ class XLerobotAdapter:
         # 调用原生刹车
         if hasattr(self, 'robot'):
             self.robot.stop_base()
+
+    def stop_all(self):
+        """全局急停：停止底盘，后续可加入停止双臂的逻辑"""
+        if not self._connected:
+            return
+
+        # 1. 停止底盘
+        self.stop_base()
