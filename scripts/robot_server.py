@@ -4,6 +4,7 @@ import sys
 import threading
 import uuid
 import time
+from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:

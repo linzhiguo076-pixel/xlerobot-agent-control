@@ -35,12 +35,18 @@ class XLerobotAdapter:
         
         for key, value in raw_obs.items():
             if key.endswith(allowed_suffixes) or key in allowed_keys:
-                if isinstance(value, (int, float, bool, str)):
-                    safe_obs[key] = round(value, 3) # 顺便截断小数位数，节省 Token
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    safe_obs[key] = round(value, 3)
+                elif isinstance(value, (bool, str)):
+                    safe_obs[key] = value
                 elif hasattr(value, "item"):
                     try:
-                        safe_obs[key] = round(value.item(), 3)
-                    except ValueError:
+                        val = value.item()
+                        if isinstance(val, (int, float)) and not isinstance(val, bool):
+                            safe_obs[key] = round(val, 3)
+                        else:
+                            safe_obs[key] = val
+                    except (ValueError, TypeError):
                         pass
         return safe_obs
 
