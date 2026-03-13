@@ -78,11 +78,8 @@ Use when the user asks about the robot’s current state, current pose, whether 
 
 Parameters: `{}`
 
-<<<<<<< HEAD
 Use immediately for emergency stop requests. In this version, it prioritizes cancelling ongoing base motion and forcing the base to stop through the centralized server.
-=======
-Use immediately for emergency stop requests or when a global stop is safer than a partial stop.
->>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
+
 
 ## clear_estop
 
