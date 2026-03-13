@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import threading
+=======
+import logging
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
 from lerobot.robots.lekiwi.lekiwi import LeKiwi
 from lerobot.robots.lekiwi.config_lekiwi import LeKiwiConfig
 
@@ -6,7 +10,10 @@ from lerobot.robots.lekiwi.config_lekiwi import LeKiwiConfig
 class XLerobotAdapter:
     def __init__(self):
         self._connected = False
+<<<<<<< HEAD
         self.io_lock = threading.RLock()
+=======
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
 
         self.config = LeKiwiConfig(
             port="/dev/ttyACM0",
@@ -19,6 +26,7 @@ class XLerobotAdapter:
             raise RuntimeError("robot is not connected")
 
     def connect(self):
+<<<<<<< HEAD
         with self.io_lock:
             if not self._connected:
                 self.robot.connect(calibrate=False)
@@ -45,6 +53,25 @@ class XLerobotAdapter:
                 return {"connected": False}
             raw_obs = self.robot.get_observation()
 
+=======
+        if not self._connected:
+            self.robot.connect(calibrate=False)
+            self._connected = True
+
+    def disconnect(self):
+        if self._connected:
+            try:
+                self.stop_all()
+            finally:
+                self.robot.disconnect()
+                self._connected = False
+
+    def get_observation(self) -> dict:
+        if not self._connected:
+            return {"connected": False}
+
+        raw_obs = self.robot.get_observation()
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
         safe_obs = {"connected": self._connected}
 
         allowed_suffixes = (".pos", ".vel")
@@ -83,8 +110,12 @@ class XLerobotAdapter:
             "y.vel": vy,
             "theta.vel": wz,  # deg/s
         }
+<<<<<<< HEAD
         with self.io_lock:
             self.robot.send_action(action)
+=======
+        self.robot.send_action(action)
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
 
     def send_head(self, head_motor_1: float, head_motor_2: float):
         self._require_connected()
@@ -92,8 +123,12 @@ class XLerobotAdapter:
             "head_motor_1.pos": head_motor_1,
             "head_motor_2.pos": head_motor_2,
         }
+<<<<<<< HEAD
         with self.io_lock:
             self.robot.send_action(action)
+=======
+        self.robot.send_action(action)
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
 
     def reset_arm(self):
         self._require_connected()
@@ -105,6 +140,7 @@ class XLerobotAdapter:
             "arm_wrist_roll.pos": 0.0,
             "arm_gripper.pos": 100.0,
         }
+<<<<<<< HEAD
         with self.io_lock:
             self.robot.send_action(reset_action)
 
@@ -121,4 +157,16 @@ class XLerobotAdapter:
     def stop_all(self):
         self._require_connected()
         # 第一版仍然保持“强制停底盘”语义
+=======
+        self.robot.send_action(reset_action)
+
+    def stop_base(self):
+        self._require_connected()
+        self.send_base(0.0, 0.0, 0.0)
+        self.robot.stop_base()
+
+    def stop_all(self):
+        self._require_connected()
+        # 第一版先做到“强制停底盘”
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
         self.stop_base()

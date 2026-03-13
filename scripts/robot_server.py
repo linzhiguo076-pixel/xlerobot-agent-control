@@ -59,6 +59,7 @@ class Handler(BaseHTTPRequestHandler):
                 "data": result # 这里面已经包含了 action_result 和 robot_state
             })
         except Exception as exc:
+<<<<<<< HEAD
             finished_at = time.time()
             self._send_json(400, {
                 "ok": False,
@@ -68,6 +69,9 @@ class Handler(BaseHTTPRequestHandler):
                 "duration_sec": round(finished_at - started_at, 3),
                 "error": str(exc),
             })
+=======
+            self._send_json(400, {"ok": False, "error": str(exc)})
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
 
     def log_message(self, format, *args):
         return
@@ -93,12 +97,17 @@ def main():
         server.server_close()
         # 核心优化：确保退出时硬件断开连接，释放端口，卸载电机扭矩
         print("Releasing robot hardware...")
+<<<<<<< HEAD
         #ORCH.stop_all()
         #ORCH.adapter.disconnect()
         try:
             ORCH.stop_all()
         finally:
             ORCH.adapter.disconnect()
+=======
+        ORCH.stop_all()
+        ORCH.adapter.disconnect()
+>>>>>>> dd16e05aaf40379b75f9d0087fe621b1add582f9
         print("Shutdown complete.")
 
 if __name__ == "__main__":
