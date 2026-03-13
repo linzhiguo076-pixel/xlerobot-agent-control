@@ -65,9 +65,7 @@ Allowed directions:
 ```json
 {
   "action_type": "reset_arm",
-  "parameters": {
-    "side": "left"
-  }
+  "parameters": {}
 }
 ```
 
@@ -88,3 +86,11 @@ Allowed directions:
   "parameters": {}
 }
 ```
+
+## clear_estop
+
+```json
+{
+  "action_type": "clear_estop",
+  "parameters": {}
+}

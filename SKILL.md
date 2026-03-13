@@ -29,6 +29,7 @@ Use one of these `action_type` values:
 - `reset_arm`
 - `get_robot_state`
 - `stop_all`
+- `clear_estop`
 
 # Action schemas
 
@@ -63,10 +64,9 @@ Use to return the head to its neutral position.
 
 ## reset_arm
 
-Parameters:
-- `side`: `left` or `right`
+Parameters: `{}`
 
-Use to move one arm back to its neutral pose.
+Use to move the currently supported arm back to its neutral pose.
 
 ## get_robot_state
 
@@ -80,6 +80,11 @@ Parameters: `{}`
 
 Use immediately for emergency stop requests or when a global stop is safer than a partial stop.
 
+## clear_estop
+
+Parameters: `{}`
+Use after a deliberate emergency stop when it is safe to resume motion.
+
 # Execution rules
 
 - Always use the local robot server. Do not open the hardware connection directly from per-call scripts.
@@ -90,6 +95,7 @@ Use immediately for emergency stop requests or when a global stop is safer than 
 - For ambiguous movement requests, choose conservative defaults.
 - For emergency language such as “stop now”, “freeze”, “halt”, or possible collision risk, use `stop_all`.
 - If the user asks what the robot is doing or where a body part is, use `get_robot_state`.
+- After `stop_all`, do not resume motion until `clear_estop` is used explicitly.
 
 # Execution
 

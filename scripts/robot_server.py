@@ -45,6 +45,8 @@ class Handler(BaseHTTPRequestHandler):
                 result = ORCH.get_robot_state()
             elif action_type == "stop_all":
                 result = ORCH.stop_all()
+            elif action_type == "clear_estop":
+                result = ORCH.clear_estop()
             else:
                 raise ValueError(f"unsupported action_type: {action_type}")
             finished_at = time.time()

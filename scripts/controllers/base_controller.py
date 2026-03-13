@@ -2,6 +2,7 @@ import time
 import logging
 import threading
 
+
 class BaseController:
     def __init__(self, adapter, control_hz: int = 10):
         self.adapter = adapter
@@ -10,10 +11,9 @@ class BaseController:
 
     def move(self, direction: str, duration: float, speed: float) -> dict:
         self.cancel_event.clear()
-        duration = min(duration, 10.0) 
-        
+        duration = min(duration, 10.0)
+
         vx = vy = wz = 0.0
-        # 假设 speed 针对线速度为 m/s，针对角速度为 deg/s
         if direction == "forward":
             vx = speed
         elif direction == "backward":
@@ -23,7 +23,7 @@ class BaseController:
         elif direction == "right":
             vy = -speed
         elif direction == "rotate_left":
-            wz = speed   # LeKiwi 要求这是度/秒
+            wz = speed
         elif direction == "rotate_right":
             wz = -speed
         else:
@@ -31,29 +31,37 @@ class BaseController:
 
         dt = 1.0 / self.control_hz
         end_time = time.time() + duration
-        
         interrupted = False
+
         try:
             while time.time() < end_time and not self.cancel_event.is_set():
                 self.adapter.send_base(vx=vx, vy=vy, wz=wz)
                 time.sleep(dt)
+
             if self.cancel_event.is_set():
                 interrupted = True
+
         except Exception as e:
-            logging.error(f"Move interrupted: {e}")
+            logging.exception("move_base failed")
+            raise RuntimeError(f"move_base failed: {e}") from e
+
         finally:
-            # 无论如何，结束时必须发送刹车指令
-            self.stop()
-            
+            # 无论成功、失败还是中断，都确保底盘停下
+            try:
+                self.stop()
+            except Exception:
+                logging.exception("failed to stop base in finally")
+
         return {
             "executed": "move_base",
             "direction": direction,
             "duration": duration,
             "speed": speed,
-            "interrupted": interrupted
+            "interrupted": interrupted,
+            "status": "interrupted" if interrupted else "completed",
         }
 
     def stop(self) -> dict:
-        self.cancel_event.set() 
-        self.adapter.stop_base() 
-        return {"executed": "stop_base"}
+        self.cancel_event.set()
+        self.adapter.stop_base()
+        return {"executed": "stop_base", "status": "completed"}

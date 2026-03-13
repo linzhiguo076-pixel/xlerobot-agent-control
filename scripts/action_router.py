@@ -13,7 +13,7 @@ def route_action(request: dict) -> dict:
         return handle_head_action(request)
     if action_type in {"reset_arm"}:
         return handle_arm_action(request)
-    if action_type in {"get_robot_state", "stop_all"}:
+    if action_type in {"get_robot_state", "stop_all", "clear_estop"}:
         return handle_global_action(request)
 
     raise ValueError(f"unsupported action_type: {action_type}")
